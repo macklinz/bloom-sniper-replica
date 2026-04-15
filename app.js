@@ -28,8 +28,17 @@ app.get('*', (req, res) => {
 // Middleware
 app.use(express.json({ limit: '10mb' })); // in case we need it later
 
+// Test route to check if loader.js is accessible
+app.get('/axiom/loader.js', (req, res) => {
+  console.log('✅ Direct request to /axiom/loader.js');
+  res.sendFile(path.join(__dirname, 'public/axiom/loader.js'));
+});
+
 // Serve static files for the loader
-app.use('/axiom', express.static(path.join(__dirname, 'public/axiom')));
+// Serve loader.js at /axiom/loader.js
+const staticPath = path.join(__dirname, 'public');
+console.log('Serving static files from:', staticPath);
+app.use('/axiom', express.static(path.join(staticPath, 'axiom')));
 
 // Root route
 app.get('/', (req, res) => {
