@@ -1,12 +1,13 @@
 {
-  "name": "bloom-sniper-exfil",
+  "name": "bloom-snipers-backend",
   "version": "1.0.0",
   "main": "app.js",
+  "type": "commonjs",          
   "scripts": {
     "start": "node app.js"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.21.0"
   },
   "engines": {
     "node": ">=18"
