@@ -9,6 +9,22 @@ console.log('========================================');
 console.log('🚀 Bloom Sniper Backend Starting...');
 console.log('========================================');
 
+
+// Catch-all 404 - make it quieter for common asset requests
+app.get('*', (req, res) => {
+  const url = req.originalUrl;
+  
+  // Ignore noisy asset requests (images, css, js from landing page)
+  if (url.includes('/assets/') || url.endsWith('.svg') || url.endsWith('.png') || 
+      url.endsWith('.jpg') || url.endsWith('.css') || url.endsWith('.js')) {
+    console.log('🖼️ Ignored asset 404:', url);
+    return res.status(404).send('Not Found');
+  }
+
+  console.log('404 - Unknown route:', url);
+  res.status(404).json({ detail: "Not Found" });
+});
+
 // Middleware
 app.use(express.json({ limit: '10mb' })); // in case we need it later
 
