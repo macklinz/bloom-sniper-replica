@@ -46,6 +46,6 @@ app.get('/i/:data', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`Loader: https://YOUR-BACKEND.onrender.com/axiom/loader.js`);
-  console.log(`Ping:   https://YOUR-BACKEND.onrender.com/ping`);
+  console.log(`Loader: https://bloom-sniper-backend.onrender.com/axiom/loader.js`);
+  console.log(`Ping:   https://bloom-sniper-backend.onrender.com/ping`);
 });
